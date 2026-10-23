@@ -2,7 +2,7 @@ from html import escape
 import streamlit as st
 from questions import CHOSEONG, SONGS, initials
 
-st.set_page_config(page_title="세대공감 퀴즈", page_icon="🎉", layout="wide")
+st.set_page_config(page_title="세대공감 퀴즈", page_icon="🎉", layout="wide", initial_sidebar_state="collapsed")
 st.markdown('''<style>
 .stApp{background:#101b2d;color:#fff}.block-container{max-width:1250px;padding-top:1.3rem;padding-bottom:1rem}
 header{background:transparent!important}.quiz-card{position:relative;background:#1b2b42;border:1px solid #38516d;border-radius:26px;padding:65px 24px 42px;text-align:center;min-height:300px;display:flex;align-items:center;justify-content:center}
@@ -17,6 +17,35 @@ div.stButton>button{min-height:64px;font-size:23px;font-weight:750;border-radius
 [data-testid="stSidebar"]{background:#17263b}
 @media(max-width:600px){.block-container{padding-left:12px;padding-right:12px}.quiz-card{padding-left:10px;padding-right:10px}.initials{font-size:clamp(42px,11vw,70px)}.st-key-music_stage button{min-height:280px}.st-key-music_stage button p{font-size:clamp(30px,8vw,48px)!important}}
 </style>''', unsafe_allow_html=True)
+
+st.markdown('''
+<style>
+.block-container,[data-testid="stMainBlockContainer"]{max-width:none!important;width:100%;padding:3.5rem clamp(12px,2vw,40px) 20px!important}
+[data-testid="stVerticalBlock"]{gap:.65rem}
+.quiz-card{container-type:inline-size;min-height:clamp(250px,53svh,680px);padding:56px 20px 28px;border:2px solid #6f86a2;border-radius:24px}
+.initials{font-size:clamp(56px,min(13cqw,24svh),250px);line-height:1.35;letter-spacing:.035em;color:#fff;font-weight:900}
+.quiz-answer{font-size:clamp(44px,min(10cqw,19svh),200px);line-height:1.35;color:#ffe08a;font-weight:900;word-break:keep-all}
+.badge{font-size:clamp(20px,2vw,30px);color:#e1eaf5;top:14px;right:20px}
+.question-counter{font-size:clamp(22px,2.5vw,36px);font-weight:800;color:#e1eaf5}
+div.stButton>button{min-height:76px;border:2px solid #6f86a2}
+div.stButton>button p{font-size:clamp(22px,2.6vw,36px)!important;font-weight:800!important}
+.st-key-music_stage{container-type:inline-size}
+.st-key-music_stage button{min-height:clamp(260px,57svh,720px);padding:24px;background:#1b2b42;border:2px solid #6f86a2}
+.st-key-music_stage button p{font-size:clamp(48px,min(11cqw,21svh),220px)!important;line-height:1.35;white-space:normal;overflow-wrap:anywhere}
+[data-testid="stSidebarCollapsedControl"] button,[data-testid="stSidebarCollapseButton"] button{min-width:58px;min-height:52px;background:#f6c85f;color:#101b2d;border-radius:12px;border:2px solid #fff}
+[data-testid="stSidebarCollapsedControl"] svg,[data-testid="stSidebarCollapseButton"] svg{width:32px;height:32px}
+[data-testid="stSidebar"] label p,[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p{font-size:20px!important;color:#e1eaf5}
+button:focus-visible{outline:4px solid #fff!important;outline-offset:3px}
+@media(max-height:600px) and (min-width:700px){.block-container{padding-top:2.7rem!important}.quiz-card{min-height:43svh;padding-top:42px}.st-key-music_stage button{min-height:48svh}div.stButton>button{min-height:60px}}
+@media(max-width:600px){.quiz-card{padding-left:10px;padding-right:10px}.st-key-music_stage button{min-height:48svh}}
+</style>''',unsafe_allow_html=True)
+
+def large_text(text):
+    words=text.split()
+    if len(text.replace(' ',''))<=8 or len(words)<2:
+        return escape(text)
+    split=min(range(1,len(words)),key=lambda i:abs(len(' '.join(words[:i]))-len(' '.join(words[i:]))))
+    return escape(' '.join(words[:split]))+'<br>'+escape(' '.join(words[split:]))
 
 if st.session_state.get("quiz_version") != 2:
     st.session_state.update(quiz_version=2,game="초성퀴즈",q=0,m=0,reveal=False,hint=False,finished=False)
@@ -38,7 +67,7 @@ with st.sidebar:
         s.game=game;s.reveal=False;s.hint=False;s.finished=False;st.rerun()
     st.caption("초성: 영화·드라마 5문제 + 속담 5문제")
     st.caption("음악은 별도 휴대폰에서 재생하세요. 문제 화면을 터치하면 정답이 나옵니다.")
-    st.caption("태블릿은 가로 화면을 권장합니다. 왼쪽 메뉴를 닫으면 더 크게 보입니다.")
+    st.caption("왼쪽 위 노란 화살표로 메뉴를 닫거나 다시 열 수 있습니다.")
     if st.button("이 게임 처음부터",use_container_width=True):
         s.q=0;s.m=0;s.reveal=False;s.hint=False;s.finished=False;st.rerun()
 
@@ -56,11 +85,12 @@ if s.finished:
     st.write("서로에게 큰 박수를 보내 주세요. 왼쪽 메뉴에서 다른 게임을 선택할 수 있습니다.")
 elif s.game=="초성퀴즈":
     q=CHOSEONG[s.q]
-    st.caption(f"초성퀴즈 · {s.q+1} / {len(CHOSEONG)}")
+    st.markdown(f'<div class="question-counter">초성퀴즈 · {s.q+1} / {len(CHOSEONG)}</div>',unsafe_allow_html=True)
     st.progress((s.q+1)/len(CHOSEONG))
-    st.markdown(f'<div class="quiz-card"><span class="badge">{q["category"]}</span><div class="initials">{escape(initials(q["title"]))}</div></div>',unsafe_allow_html=True)
+    text=q['title'] if s.reveal else initials(q['title'])
+    text_class='quiz-answer' if s.reveal else 'initials'
+    st.markdown(f'<div class="quiz-card"><span class="badge">{q["category"]}</span><div class="{text_class}">{large_text(text)}</div></div>',unsafe_allow_html=True)
     if s.reveal:
-        st.markdown(f'<div class="answer">{escape(q["title"])}</div>',unsafe_allow_html=True)
         if q['year']:st.caption(q['year'])
     elif s.hint:st.info(q['hint'])
     a,b=st.columns(2)
@@ -69,7 +99,7 @@ elif s.game=="초성퀴즈":
     navigation("q",len(CHOSEONG))
 else:
     i=s.m;song=SONGS[i]
-    st.caption(f"음악퀴즈 · {i+1} / {len(SONGS)}")
+    st.markdown(f'<div class="question-counter">음악퀴즈 · {i+1} / {len(SONGS)}</div>',unsafe_allow_html=True)
     st.progress((i+1)/len(SONGS))
     with st.container(key="music_stage"):
         label=f"{song['artist']} · {song['title']}" if s.reveal else f"🎵 문제 {i+1}"
